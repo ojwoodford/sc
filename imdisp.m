@@ -69,7 +69,7 @@
 %
 %   See also IMAGE, IMAGESC, IMSHOW, MONTAGE.
 
-% Copyright: Oliver Woodford 2010
+% Copyright: Oliver Woodford 2010-2014
 
 function hIm = imdisp(I, varargin)
 % Parse inputs
@@ -197,7 +197,7 @@ elseif n == 1
     % Could still be the first subplot - do another check
     axesPos = get(hAx, 'Position');
     newAxesPos = [gap(1) gap(end) 1-2*gap(1) 1-2*gap(end)];
-    if isequal(axesPos, get(hFig, 'DefaultAxesPosition'))
+    if max(abs(axesPos - get(hFig, 'DefaultAxesPosition'))) < 1e-15
         % Default position => not a subplot
         % Fill the window
         set(hAx, 'Units', 'normalized', 'Position', newAxesPos);
@@ -429,7 +429,8 @@ if isempty(A)
 else
     hIm = image(A);
 end
-set(hAx, 'Visible', 'off', 'DataAspectRatio', [1 1 1], 'DrawMode', 'fast', 'CLim', lims);
+fast = {'SortMethod', 'childorder'; 'DrawMode', 'fast'};
+set(hAx, 'Visible', 'off', 'DataAspectRatio', [1 1 1], 'CLim', lims, fast{1+verLessThan('matlab', '8.4'),:});
 set(get(hAx, 'XLabel'), 'Visible', 'on');
 set(get(hAx, 'YLabel'), 'Visible', 'on');
 set(get(hAx, 'Title'), 'Visible', 'on');
