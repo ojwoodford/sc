@@ -429,8 +429,13 @@ if isempty(A)
 else
     hIm = image(A);
 end
-fast = {'SortMethod', 'childorder'; 'DrawMode', 'fast'};
-set(hAx, 'Visible', 'off', 'DataAspectRatio', [1 1 1], 'CLim', lims, fast{1+verLessThan('matlab', '8.4'),:});
+set(hAx, 'Visible', 'off', 'DataAspectRatio', [1 1 1], 'CLim', lims);
+try
+    set(hAx, 'SortMethod', 'childorder');
+catch
+    % Support older versions
+    set(hAx, 'DrawMode', 'fast');
+end
 set(get(hAx, 'XLabel'), 'Visible', 'on');
 set(get(hAx, 'YLabel'), 'Visible', 'on');
 set(get(hAx, 'Title'), 'Visible', 'on');
