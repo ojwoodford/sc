@@ -288,6 +288,15 @@ ImSz = layout([2 1]) .* [x y] ./ (1 - 2 * gap([end 1]));
 figPosCur = get(hFig, 'Position');
 % Monitor sizes
 MonSz = get(0, 'MonitorPositions');
+try
+    if verLessThan('matlab', '8.4');
+        % Correct the size
+        MonSz(:,3:4) = MonSz(:,3:4) - MonSz(:,1:2) + 1;
+    end
+catch
+    % Correct the size
+    MonSz(:,3:4) = MonSz(:,3:4) - MonSz(:,1:2) + 1;
+end
 MonOn = size(MonSz, 1);
 if MonOn > 1
     % Make the origin the top left corner of the primary monitor
@@ -302,12 +311,11 @@ if MonOn > 1
     end
     % Determine which monitor the centre of the image is on
     figCenter = figPosCur(1:2) + figPosCur(3:4) / 2;
-    figCenter = MonSz - repmat(figCenter, [MonOn 2]);
+    figCenter = MonSz(:,1:2) - repmat(figCenter, [MonOn 1]);
+    figCenter = [figCenter figCenter+MonSz(:,3:4)];
     MonOn = all(sign(figCenter) == repmat([-1 -1 1 1], [MonOn 1]), 2);
     MonOn(1) = MonOn(1) | ~any(MonOn);
     MonSz = MonSz(MonOn,:);
-    % Correct the size
-    MonSz(3:4) = MonSz(3:4) - MonSz(1:2) + 1;
     % Correct the origin
     if correction
         MonSz(2) = correction - MonSz(4) - MonSz(2) + 2;
