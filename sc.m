@@ -168,7 +168,7 @@ if n > 1
 end
 
 %% Parse the input arguments coming after I (1st input)
-[map, limits, mask] = parse_inputs(I, varargin, y, x);
+[I, map, limits, mask] = parse_inputs(I, varargin, y, x);
 
 %% Call the rendering function
 if isnumeric(map) && (size(map, 2) == 3 || size(map, 2) == 4)
@@ -538,7 +538,7 @@ end
 return
 
 %% Parse input variables
-function [map, limits, mask] = parse_inputs(I, inputs, y, x)
+function [I, map, limits, mask] = parse_inputs(I, inputs, y, x)
 
 % Check the first two arguments for the colormap and limits
 ninputs = numel(inputs);
@@ -581,6 +581,7 @@ else
     error('Error parsing inputs');
 end
 % Go through pairs and generate
+M = false(y, x);
 for a = 1:size(mask, 2)
     % Generate any masks from functions
     if isa(mask{2,a}, 'function_handle')
@@ -608,7 +609,11 @@ for a = 1:size(mask, 2)
     if size(mask{1,a}, 1) ~= 1
         mask{1,a} = mask{1,a}(mask{2,a},:);
     end
+    M = M | mask{2,a};
 end
+% Set all masked pixels to NaN, so they're ignored later, e.g. during limit
+% computation
+I(M(:,:,ones(1, size(I, 3)))) = NaN;
 return
 
 %% RGB2gray
