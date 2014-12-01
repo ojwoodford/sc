@@ -10,11 +10,12 @@
 %   h = imdisp(...)
 %
 % This function displays one or more images nicely. Images can be defined
-% by arrays or filenames. Multiple images can be input in a cell array or
-% stacked along the fourth dimension, and are displayed as a grid of
-% subplots (an improvement over MONTAGE). The size of grid is calculated or
-% user defined. The figure size is set so that images are magnified by an
-% integer value.
+% by arrays, filenames or imstream objects (which can be videos or image
+% sequences). Multiple images can be input in a cell array or stacked along
+% the fourth dimension (as well as in an imstream object), and are
+% displayed as a grid of subplots (an improvement over MONTAGE). The size
+% of grid is calculated or user defined. The figure size is set so that
+% images are magnified by an integer value.
 %
 % If the image grid size is user defined, images not fitting in the grid
 % can be scrolled through using the following key presses:
@@ -25,9 +26,13 @@
 %    Shift - 2 x speed.
 %    Ctrl - 4 x speed.
 %    Shift + Ctrl - 8 x speed.
+% Other keypresses available are:
+%    'f' - Print out the index of the current frame.
+%    'q' - Quit the ability to scroll through images.
+%    Esc - Close the figure.
 %
 % This allows fast scrolling through a movie or image stack, e.g. 
-%    imdisp(imstack, 'Size', 1)
+%    imdisp(imstream('xylophone.mp4'), 'Size', 1)
 % The function can be used as a visual DIR, e.g. 
 %    imdisp()
 % to display all images in the current directory on a grid, or 
@@ -35,11 +40,11 @@
 % to scroll through them one at a time.
 %
 % IN:
-%   I - MxNxCxP array of images, or 1xP cell array. C is 1 for indexed
-%       images or 3 for RGB images. P is the number of images. If I is a
-%       cell array then each cell must contain an image. Images can equally
-%       be defined by filenames. If I is an empty cell array then all the
-%       images in the current directory are used. Default: {}.
+%   I - MxNxCxP array of images, 1xP cell array or imstream object. C is 1
+%       for indexed images or 3 for RGB images. P is the number of images.
+%       If I is a cell array then each cell must contain an image. Images
+%       can equally be defined by filenames. If I is an empty cell array
+%       then all the images in the current directory are used. Default: {}.
 %   map - Kx3 colormap to be used with indexed images. Default: gray(256).
 %   lims - [LOW HIGH] display range for indexed images. Default: [min(I(:))
 %          max(I(:))].
@@ -75,9 +80,9 @@ function hIm = imdisp(I, varargin)
 % Parse inputs
 [map, layout, gap, indices, lims, figSize] = parse_inputs(varargin);
 
-if nargin == 0 || (iscell(I) && isempty(I))
+if nargin == 0 || (is_cell_or_stream(I) && isempty(I))
     % Read in all the images in the directory
-    I = get_im_names;
+    I = get_im_names();
     if isempty(I)
         % No images found
         if nargout > 0
@@ -115,8 +120,12 @@ if isnumeric(I) || islogical(I)
         I = uint8(I * 256 - 0.5);
         lims = round(lims * 256 - 0.5);
     end
-elseif iscell(I)
-    n = numel(I);
+elseif is_cell_or_stream(I)
+    if iscell(I)
+        n = numel(I);
+    else
+        n = num_frames(I);
+    end
     A = I{1};
     if ischar(A)
         % Read in the image (or images for multi-frame files)
@@ -181,7 +190,7 @@ elseif n == 1
     % IMSHOW mode
     % Display the single image
     hAx = gca;
-    if iscell(I)
+    if is_cell_or_stream(I)
         I = I{1};
     end
     hIm = display_image(I, hAx, lims);
@@ -240,7 +249,7 @@ else
             c = index(b + (layout(1) - a) * layout(2));
             if c > n
                 A = [];
-            elseif iscell(I)
+            elseif is_cell_or_stream(I)
                 A = I{c};
                 if ischar(A)
                     A = imread_rgb(A);
@@ -352,7 +361,7 @@ figPosNew(1:2) = min(max(figPosNew(1:2), MonSz(1:2)+6), MonSz(1:2)+MonSz(3:4)-[6
 
 % Set the figure size and position
 set(hFig, 'Position', figPosNew);
-return
+end
 
 %% Keypress callback
 % The function which does all the display stuff
@@ -367,6 +376,16 @@ switch event_data.Character
         up = -0.1; % Back a row
     case 31 % Down
         up = 0.1; % Forward a row
+    case 'f'
+        state = get(fig, 'UserData');
+        fprintf('Current index: %d\n', state.index); % Print out the index
+        return;
+    case 'q'
+        set(fig, 'KeyPressFcn', []); % Quit the widget
+        return;
+    case 27 % Escape
+        close(fig); % Close the figure
+        return;
     otherwise
         % Another key was pressed - ignore it
         return
@@ -404,7 +423,7 @@ for a = 1:state.layout(1)
         if c > state.n
             % Set the image data
             set(state.hIm(a,b), 'CData', []);
-        elseif iscell(state.I)
+        elseif is_cell_or_stream(state.I)
             A = state.I{c};
             if ischar(A)
                 % Filename - read the image from disk
@@ -427,7 +446,7 @@ drawnow;
 % Save the current index
 state.index = index(1);
 set(fig, 'UserData', state);
-return
+end
 
 %% Display the image
 function hIm = display_image(A, hAx, lims)
@@ -448,7 +467,7 @@ set(get(hAx, 'XLabel'), 'Visible', 'on');
 set(get(hAx, 'YLabel'), 'Visible', 'on');
 set(get(hAx, 'Title'), 'Visible', 'on');
 set(hIm, 'CDataMapping', 'scaled');
-return
+end
 
 %% Choose a good layout for the images
 function layout = choose_layout(n, y, x, layout, sz)
@@ -481,7 +500,7 @@ elseif any(N)
     layout(N) = ceil(n / layout(~N));
 end
 layout = reshape(layout, 1, 2);
-return
+end
 
 %% Read image to uint8 rgb array
 function A = imread_rgb(name)
@@ -530,7 +549,7 @@ if ~isempty(alpha)
     alpha = grid(1:size(A, 1),1:size(A, 2)) .* (1 - alpha);
     A = uint8(A + alpha(:,:,ones(1, size(A, 3))));
 end
-return
+end
 
 %% Read (potentially) multi-frame image to uint8 rgb array
 function A = imread_rgb_multi(name)
@@ -545,7 +564,6 @@ end
 if numel(info) < 2
     % Single image
     A = imread_rgb(name);
-    return
 else
     % Multi-frame image
     switch lower(info(1).Format)
@@ -579,13 +597,12 @@ else
         otherwise
             % Multi-frame not supported for this format
             A = imread_rgb(name);
-            return
     end
 end
-return
+end
 
 %% Get the names of all images in a directory
-function L = get_im_names
+function L = get_im_names()
 D = dir;
 n = 0;
 L = cell(size(D));
@@ -598,7 +615,7 @@ for a = 1:numel(D)
     end
 end
 L = L(1:n);
-return
+end
 
 %% Parse inputs
 function [map, layout, gap, indices, lims, figSize] = parse_inputs(inputs)
@@ -654,7 +671,7 @@ end
 if isempty(map)
    map = gray(256);
 end
-return
+end
 
 %% Return default limits for the image type
 function lims = default_limits(A)
@@ -666,7 +683,7 @@ else
         lims = lims * double(intmax(class(A)));
     end
 end
-return
+end
 
 %% Return minimum and maximum values
 function lims = min_max(A)
@@ -681,4 +698,9 @@ if isempty(lims)
 elseif lims(1) == lims(2)
     lims(2) = lims(1) + 1;
 end
-return
+end
+
+%% Determine if images are in a cell array or imstream object
+function tf = is_cell_or_stream(I)
+tf = iscell(I) || isa(I, 'imstream');
+end
