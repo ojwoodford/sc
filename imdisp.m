@@ -28,7 +28,8 @@
 %    Shift + Ctrl - 8 x speed.
 % Other keypresses available are:
 %    'f' - Print out the index of the current frame.
-%    'q' - Quit the ability to scroll through images.
+%    'g' - Go to frame input by user. Values <= 0 offset from the end.
+%    'q' - End figure interactivity.
 %    Esc - Close the figure.
 %
 % This allows fast scrolling through a movie or image stack, e.g. 
@@ -380,6 +381,14 @@ switch event_data.Character
         state = get(fig, 'UserData');
         fprintf('Current index: %d\n', state.index); % Print out the index
         return;
+    case 'g'
+        % Get the user to input a frame number
+        up = input('Enter frame number to go to: ');
+        state = get(fig, 'UserData');
+        if up <= 0
+            up = state.num + up;
+        end
+        up = up - state.index;
     case 'q'
         set(fig, 'KeyPressFcn', []); % Quit the widget
         return;
@@ -390,12 +399,14 @@ switch event_data.Character
         % Another key was pressed - ignore it
         return
 end
-% Use control and shift for faster scrolling
-if ~isempty(event_data.Modifier)
-    up = up * (2 ^ (strcmpi(event_data.Modifier, {'shift', 'control'}) * [1; 2]));
+if event_data.Character <= 31
+    % Get the state data
+    state = get(fig, 'UserData');
+    % Use control and shift for faster scrolling
+    if ~isempty(event_data.Modifier)
+        up = up * (2 ^ (strcmpi(event_data.Modifier, {'shift', 'control'}) * [1; 2]));
+    end
 end
-% Get the state data
-state = get(fig, 'UserData');
 % Get the current index
 index = state.index;
 % Get number of images
