@@ -298,12 +298,7 @@ ImSz = layout([2 1]) .* [x y] ./ (1 - 2 * gap([end 1]));
 figPosCur = get(hFig, 'Position');
 % Monitor sizes
 MonSz = get(0, 'MonitorPositions');
-try
-    if verLessThan('matlab', '8.4');
-        % Correct the size
-        MonSz(:,3:4) = MonSz(:,3:4) - MonSz(:,1:2) + 1;
-    end
-catch
+if ~ishg2(hFig);
     % Correct the size
     MonSz(:,3:4) = MonSz(:,3:4) - MonSz(:,1:2) + 1;
 end
@@ -714,4 +709,13 @@ end
 %% Determine if images are in a cell array or imstream object
 function tf = is_cell_or_stream(I)
 tf = iscell(I) || isa(I, 'imstream');
+end
+
+%% Determine if using hg2
+function tf = ishg2(fig)
+try
+    tf = ~graphicsversion(fig, 'handlegraphics');
+catch
+    tf = false;
+end
 end
