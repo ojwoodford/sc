@@ -271,6 +271,7 @@ else
         state.hAx = hAx;
         state.index = 1;
         state.layout = layout;
+        state.lims = lims;
         state.n = n;
         state.I = I;
         % Set the callback for image navigation, and save the image data in the figure
@@ -437,7 +438,7 @@ for a = 1:state.layout(1)
                 state.I{c} = A;
             end
             % Set the image data
-            set(state.hIm(a,b), 'CData', A);
+            set(state.hIm(a,b), 'CData', rescale_rgb(A, state.lims));
             % Reset the axes limits
             if ~isempty(A)
                 set(state.hAx(a,b), 'XLim', [0.5 size(A, 2)+0.5], 'YLim', [0.5 size(A, 1)+0.5]);
@@ -460,7 +461,7 @@ if isempty(A)
     hIm = image(zeros(1, 1, 3));
     set(hIm, 'CData', []);
 else
-    hIm = image(A);
+    hIm = image(rescale_rgb(A, lims));
 end
 set(hAx, 'Visible', 'off', 'DataAspectRatio', [1 1 1], 'CLim', lims);
 try
@@ -676,6 +677,13 @@ end
 
 if isempty(map)
    map = gray(256);
+end
+end
+
+%% Rescale RGB images to the correct limits
+function A = rescale_rgb(A, lims)
+if size(A, 3) == 3 && ~isequal(lims, default_limits(A))
+    A = rescale(A, lims);
 end
 end
 

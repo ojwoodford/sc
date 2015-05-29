@@ -1,4 +1,4 @@
-function [B lims] = rescale(A, lims, out_lims)
+function [B, lims] = rescale(A, lims, out_lims)
 %RESCALE  Linearly rescale values in an array
 %
 % Examples:
