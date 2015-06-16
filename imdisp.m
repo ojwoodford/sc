@@ -721,9 +721,5 @@ end
 
 %% Determine if using hg2
 function tf = ishg2(fig)
-try
-    tf = ~graphicsversion(fig, 'handlegraphics');
-catch
-    tf = false;
-end
+tf = isa(fig, 'matlab.ui.Figure');
 end
