@@ -104,6 +104,7 @@ if ischar(I)
 end
 
 % Get limits, etc.
+cell_or_stream = false;
 if isnumeric(I) || islogical(I)
     [y, x, c, n] = size(I);
     if isempty(lims)
@@ -123,11 +124,8 @@ if isnumeric(I) || islogical(I)
         lims = round(lims * 256 - 0.5);
     end
 elseif is_cell_or_stream(I)
-    if iscell(I)
-        n = numel(I);
-    else
-        n = num_frames(I);
-    end
+    cell_or_stream = true;
+    n = numel(I);
     A = I{1};
     if ischar(A)
         % Read in the image (or images for multi-frame files)
@@ -172,7 +170,7 @@ end
 hFig = get(0, 'CurrentFigure');
 if isempty(hFig)
     % Create a new figure
-    hFig = figure;
+    hFig = figure();
 end
 
 if n < 2
@@ -192,7 +190,7 @@ elseif n == 1
     % IMSHOW mode
     % Display the single image
     hAx = gca;
-    if is_cell_or_stream(I)
+    if cell_or_stream
         I = I{1};
     end
     hIm = display_image(I, hAx, lims);
@@ -251,7 +249,7 @@ else
             c = index(b + (layout(1) - a) * layout(2));
             if c > n
                 A = [];
-            elseif is_cell_or_stream(I)
+            elseif cell_or_stream
                 A = I{c};
                 if ischar(A)
                     A = imread_rgb(A);
@@ -275,6 +273,7 @@ else
         state.lims = lims;
         state.n = n;
         state.I = I;
+        state.is_cell_or_stream = cell_or_stream;
         % Set the callback for image navigation, and save the image data in the figure
         set(hFig, 'KeyPressFcn', @keypress_callback, 'Interruptible', 'off', 'BusyAction', 'cancel', 'UserData', state);
     end
@@ -287,8 +286,8 @@ else
     end
 end
 
-if strcmp(get(hFig, 'WindowStyle'), 'docked')
-    % Figure is docked, so can't resize
+if strcmp(get(hFig, 'WindowStyle'), 'docked') || x == 0 || y == 0
+    % Figure is docked or image is empty, so can't resize
     return
 end
 
@@ -431,7 +430,7 @@ for a = 1:state.layout(1)
         if c > state.n
             % Set the image data
             set(state.hIm(a,b), 'CData', []);
-        elseif is_cell_or_stream(state.I)
+        elseif state.is_cell_or_stream
             A = state.I{c};
             if ischar(A)
                 % Filename - read the image from disk
@@ -715,9 +714,20 @@ elseif lims(1) == lims(2)
 end
 end
 
-%% Determine if images are in a cell array or imstream object
+%% Determine if images are in a cell array or stream object (e.g. imstream)
 function tf = is_cell_or_stream(I)
-tf = iscell(I) || isa(I, 'imstream');
+tf = true;
+if iscell(I)
+    return;
+end
+try
+    % Stream objects must overload nueml() and {} indexing
+    assert(any(strcmp('numel', methods(I))));
+    assert(isnumeric(I{1}));
+    return;
+catch
+end
+tf = false;
 end
 
 %% Determine if using hg2

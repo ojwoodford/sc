@@ -85,7 +85,7 @@ classdef imstream < handle
                     end
                     A = read(this, frame(1).subs{1});
                 case '.'
-                    if any(strcmp(frame(1).subs, {'read', 'num_frames', 'next', 'getframe', 'getnext', 'step', 'seek', 'close'}))
+                    if any(strcmp(frame(1).subs, methods(this)))
                         % Forward these references to the relevant method
                         A = builtin('subsref', this, frame);
                     elseif any(strcmp(frame(1).subs, methods(this.sh))) || any(strcmp(frame(1).subs, properties(this.sh)))
@@ -100,6 +100,13 @@ classdef imstream < handle
         % Get the number of frames
         function n = num_frames(this)
             n = get(this.sh, 'NumberOfFrames');
+        end
+        function n = numel(this, varargin)
+            if nargin > 1
+                n = prod(cellfun(@numel, varargin));
+            else
+                n = num_frames(this);
+            end
         end
         % Support the videoReader (from VideoIO toolbox) interface for backwards compatibility
         function b = next(this)

@@ -38,24 +38,24 @@ classdef cache < handle
             end
             buf_size = max(buf_size, 1);
             this.buffer = cell(buf_size, 1);
-            this.cache_indices = zeros(buf_size, 1);
+            this.cache_indices = NaN(buf_size, 1);
             this.cache_count = zeros(buf_size, 1);
             this.load_count = 0;
         end
         % The main function - get
-        function A = get(this, ind)
-            if nargin < 2 || ~isscalar(ind)
+        function A = get(this, n)
+            if nargin < 2 || ~isscalar(n)
                 error('Only one object can be got at a time');
             end
             % Check if buffered
-            ind = find(this.cache_indices == ind, 1);
+            ind = find(this.cache_indices == n, 1);
             if isempty(ind)
                 % Cache the frame
                 % Find the least recently used slot
                 [ind, ind] = min(this.cache_count);
                 % Read in the frame
-                this.cache_indices(ind) = ind;
-                this.buffer{ind} = this.load_func(ind);
+                this.cache_indices(ind) = n;
+                this.buffer{ind} = this.load_func(n);
             end
             % Retrieve the cached frame
             A = this.buffer{ind};
