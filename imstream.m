@@ -56,7 +56,7 @@ classdef imstream < handle
                     error('File extension %s not recognised.', fext);
             end
             % Create the buffered stream
-            this.buffer = imbuf(@(n) read(this.sh, n), varargin{:});
+            this.buffer = cache(@(n) read(this.sh, n), varargin{:});
             % Current frame for VideoIO compatibility
             this.curr_frame = -1;  % Zero based!
         end
@@ -73,7 +73,7 @@ classdef imstream < handle
         end
         % The main function - read!
         function A = read(this, frame)
-            A = read(this.buffer, frame); % Read from the buffered stream
+            A = get(this.buffer, frame); % Read from the buffered stream
             this.curr_frame = frame - 1; % Zero based!
         end
         % Forward calls like imstream(a) to read
