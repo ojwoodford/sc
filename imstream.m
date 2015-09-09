@@ -38,16 +38,12 @@ classdef imstream < handle
     properties (Hidden = true, SetAccess = private)
         sh; % Stream handle
         curr_frame;
-        % Image cache stuff
-        image_buffer;
-        buffer_indices;
-        buffer_count;
-        read_count;
+        buffer; % Image cache stuff
     end
     
     methods
         % Constructor
-        function this = imstream(fname, buf_size)
+        function this = imstream(fname, varargin)
             [fext, fext, fext] = fileparts(fname);
             switch lower(fext(2:end))
                 case {'bmp', 'tif', 'tiff', 'jpeg', 'jpg', 'png', 'ppm', 'pgm', 'pbm', 'gif'}
@@ -59,14 +55,8 @@ classdef imstream < handle
                 otherwise
                     error('File extension %s not recognised.', fext);
             end
-            if nargin < 2
-                buf_size = 1; % Default number of images to keep cached
-            end
-            buf_size = max(buf_size, 1);
-            this.image_buffer = cell(buf_size, 1);
-            this.buffer_indices = zeros(buf_size, 1);
-            this.buffer_count = zeros(buf_size, 1);
-            this.read_count = 0;
+            % Create the buffered stream
+            this.buffer = imbuf(@(n) read(this.sh, n), varargin{:});
             % Current frame for VideoIO compatibility
             this.curr_frame = -1;  % Zero based!
         end
@@ -83,24 +73,7 @@ classdef imstream < handle
         end
         % The main function - read!
         function A = read(this, frame)
-            if nargin < 2 || ~isscalar(frame)
-                errror('Only one frame can be read at a time');
-            end
-            % Check if buffered
-            ind = find(this.buffer_indices == frame, 1);
-            if isempty(ind)
-                % Cache the frame
-                % Find the least recently used slot
-                [ind, ind] = min(this.buffer_count);
-                % Read in the frame
-                this.buffer_indices(ind) = frame;
-                this.image_buffer{ind} = read(this.sh, frame);
-            end
-            % Retrieve the cached frame
-            A = this.image_buffer{ind};
-            % Update the count and frame number
-            this.read_count = this.read_count + 1;
-            this.buffer_count(ind) = this.read_count;
+            A = read(this.buffer, frame); % Read from the buffered stream
             this.curr_frame = frame - 1; % Zero based!
         end
         % Forward calls like imstream(a) to read
