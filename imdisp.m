@@ -116,6 +116,7 @@ if isnumeric(I) || islogical(I)
             I = single(I);
         end
         I = min(max((I - lims(1)) ./ (lims(2) - lims(1)), 0), 1);
+        lims = [0 1];
     end
     if isfloat(I) && c == 3 && n > 1
         I = uint8(I * 256 - 0.5);
