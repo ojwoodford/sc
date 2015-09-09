@@ -81,7 +81,7 @@ function hIm = imdisp(I, varargin)
 % Parse inputs
 [map, layout, gap, indices, lims, figSize] = parse_inputs(varargin);
 
-if nargin == 0 || (is_cell_or_stream(I) && isempty(I))
+if nargin == 0 || (iscell(I) && isempty(I))
     % Read in all the images in the directory
     I = get_im_names();
     if isempty(I)

@@ -1,7 +1,7 @@
 %CACHE Wrapper class for caching slow-to-load data
 %
-%    h = cache(load_func, [cache_len])
-%    im = get(h, frame_num)
+%    buffer = cache(load_func, [cache_len])
+%    obj = buffer{frame_num}
 %
 % This class implements a cache, which can improve efficiency when loading
 % slow-to-load objects several times.
@@ -14,7 +14,8 @@
 %   key - scalar key which is passed to read_fun to load an object.
 %
 % OUT:
-%   h - handle to the cache.
+%   buffer - handle to the cache.
+%   obj - cached object.
 
 % Copyright (C) Oliver Woodford 2015
 
@@ -61,6 +62,23 @@ classdef cache < handle
             % Update the count and frame number
             this.load_count = this.load_count + 1;
             this.cache_count(ind) = this.load_count;
+        end
+        % Forward calls like cache(a) to get
+        function A = subsref(this, frame)
+            switch frame(1).type
+                case {'()', '{}'}
+                    if numel(frame(1).subs) ~= 1
+                        error('Only one dimensional indexing supported');
+                    end
+                    A = get(this, frame(1).subs{1});
+                case '.'
+                    if strcmp(frame(1).subs, 'get')
+                        % Forward these references to the relevant method
+                        A = builtin('subsref', this, frame);
+                    else
+                        error('%s is not a public property or method of the cache class.', frame(1).subs);
+                    end
+            end
         end
     end
 end
