@@ -48,7 +48,7 @@ classdef imstream < handle
     methods
         % Constructor
         function this = imstream(fname, buf_size)
-            [fext fext fext] = fileparts(fname);
+            [fext, fext, fext] = fileparts(fname);
             switch lower(fext(2:end))
                 case {'bmp', 'tif', 'tiff', 'jpeg', 'jpg', 'png', 'ppm', 'pgm', 'pbm', 'gif'}
                     % Image sequence
@@ -91,7 +91,7 @@ classdef imstream < handle
             if isempty(ind)
                 % Cache the frame
                 % Find the least recently used slot
-                [ind ind] = min(this.buffer_count);
+                [ind, ind] = min(this.buffer_count);
                 % Read in the frame
                 this.buffer_indices(ind) = frame;
                 this.image_buffer{ind} = read(this.sh, frame);
@@ -151,7 +151,7 @@ classdef imstream < handle
     end
     % Other functions
     methods(Static)
-         function b = isPlatformSupported()
+        function b = isPlatformSupported()
             b = true; % Always supported
         end
         function formats = getFileFormats()
