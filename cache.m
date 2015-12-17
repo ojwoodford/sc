@@ -25,7 +25,6 @@
 classdef cache < handle
     properties (Hidden = true, SetAccess = private)
         load_func; % Function to read in an object
-        post_load_func; % Function to convert cached data to output data
         % Image cache stuff
         buffer;
         cache_indices;
@@ -35,15 +34,10 @@ classdef cache < handle
     
     methods
         % Constructor
-        function this = cache(load_fun, buf_size, post_load_fun)
+        function this = cache(load_fun, buf_size)
             this.load_func = load_fun;
-            if nargin > 2
-                this.post_load_func = post_load_fun;
-            else
-                this.post_load_func = @(x) x;
-                if nargin < 2
-                    buf_size = 1; % Default number of images to keep cached
-                end
+            if nargin < 2
+                buf_size = 1; % Default number of images to keep cached
             end
             buf_size = max(buf_size, 1);
             this.buffer = cell(buf_size, 1);
@@ -68,8 +62,6 @@ classdef cache < handle
             end
             % Retrieve the cached frame
             A = this.buffer{ind};
-            % Convert to output format
-            A = this.post_load_func(A);
             % Update the count and frame number
             this.load_count = this.load_count + 1;
             this.cache_count(ind) = this.load_count;
