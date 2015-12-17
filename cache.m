@@ -1,6 +1,6 @@
 %CACHE Wrapper class for caching slow-to-load data
 %
-%    buffer = cache(load_func, [cache_len, [post_load_func]])
+%    buffer = cache(load_func, [cache_len])
 %    obj = buffer{frame_num}
 %
 % This class implements a cache, which can improve efficiency when loading
@@ -11,9 +11,6 @@
 %               returns an object.
 %   cache_len - scalar indicating how many objects can be stored in the
 %               cache. Default: 1 (cache only the most recent object).
-%   post_load_func - Handle to a function which converts cached data to the
-%                    desired output format. Default: @(x) x (i.e. do
-%                    nothing).
 %   key - scalar key which is passed to read_fun to load an object.
 %
 % OUT:
