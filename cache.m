@@ -1,7 +1,7 @@
 %CACHE Wrapper class for caching slow-to-load data
 %
 %    buffer = cache(load_func, [cache_len])
-%    obj = buffer{frame_num}
+%    obj = buffer{key}
 %
 % This class implements a cache, which can improve efficiency when loading
 % slow-to-load objects several times.
