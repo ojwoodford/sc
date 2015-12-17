@@ -44,6 +44,10 @@ classdef imseq < hgsetget
         Type;
     end
     properties
+        % Writable properties
+        CurrentTime;
+    end
+    properties
         % Editable properties
         Tag;
         UserData;
@@ -73,7 +77,7 @@ classdef imseq < hgsetget
             this.format_string = sprintf('%s%%.%dd%s%s', fname(1:start-1), finish-start+1, fname(finish+1:end), fext);
             this.path = [fpath filesep];
             this.zero_index = str2double(fname(start:finish)) - 1;
-            this.FrameRate = 15;
+            this.FrameRate = 30;
             % Compute sequence length
             fnum = this.zero_index;
             while 1
@@ -106,6 +110,7 @@ classdef imseq < hgsetget
             this.VideoFormat = sprintf(str{size(A, 3)}, this.BitsPerPixel);
             this.Type = 'imseq';
             this.Tag = '';
+            this.CurrentTime = 0;
         end
         % Destructor
         function this = delete(this)
@@ -116,6 +121,7 @@ classdef imseq < hgsetget
                 % Seek to the end
                 fnum = this.NumberOfFrames;
             end
+            this.CurrentTime = fnum / this.FrameRate;
             if fnum < 1 || fnum > this.NumberOfFrames
                 error('Frame %d is not in the range of allowed frames: [1 %d].', fnum, this.NumberOfFrames);
             end
@@ -123,6 +129,14 @@ classdef imseq < hgsetget
             if ~isempty(map)
                 A = reshape(map(uint32(A)+1,:), [size(A) size(map, 2)]); % Assume indexed from 0
             end
+        end
+        % hasFrame - same as VideoReader
+        function tf = hasFrame(this)
+            tf = this.CurrentTime < this.Duration;
+        end
+        % readFrame - same as VideoReader
+        function A = readFrame(this)
+            A = read(this, round(this.CurrentTime * this.FrameRate) + 1);
         end
     end
     % Other VideoReader functions

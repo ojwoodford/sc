@@ -38,6 +38,7 @@ classdef imstream < handle
     properties (Hidden = true, SetAccess = private)
         sh; % Stream handle
         curr_frame;
+        last_frame_lowlevel;
         buffer; % Image cache stuff
     end
     
@@ -56,9 +57,10 @@ classdef imstream < handle
                     error('File extension %s not recognised.', fext);
             end
             % Create the buffered stream
-            this.buffer = cache(@(n) read(this.sh, n), varargin{:});
+            this.buffer = cache(@(n) read_lowlevel(this, n), varargin{:});
             % Current frame for VideoIO compatibility
-            this.curr_frame = -1;  % Zero based!
+            this.curr_frame = 0;
+            this.last_frame_lowlevel = 0;
         end
         % Destructor
         function delete(this)
@@ -74,7 +76,7 @@ classdef imstream < handle
         % The main function - read!
         function A = read(this, frame)
             A = get(this.buffer, frame); % Read from the buffered stream
-            this.curr_frame = frame - 1; % Zero based!
+            this.curr_frame = frame;
         end
         % Forward calls like imstream(a) to read
         function A = subsref(this, frame)
@@ -99,7 +101,7 @@ classdef imstream < handle
         end
         % Get the number of frames
         function n = num_frames(this)
-            n = get(this.sh, 'NumberOfFrames');
+            n = round(get(this.sh, 'Duration') * get(this.sh, 'FrameRate'));
         end
         function n = numel(this, varargin)
             if nargin > 1
@@ -113,7 +115,7 @@ classdef imstream < handle
             b = step(this, 1);
         end
         function A = getframe(this)
-            A = read(this, this.curr_frame+1); % Zero based!
+            A = read(this, this.curr_frame);
         end
         function A = getnext(this)
             next(this);
@@ -123,10 +125,25 @@ classdef imstream < handle
             b = seek(this, this.curr_frame + delta);
         end
         function b = seek(this, fnum)
-            b = isempty(read(this, fnum+1)); % Zero based!
+            b = isempty(read(this, fnum));
         end
         function this = close(this)
             delete(this);
+        end
+        % Support for new videoReader methods
+        function b = hasFrame(this)
+            b = this.curr_frame < num_frames(this);
+        end
+        function A = readFrame(this)
+            A = read(this, this.curr_frame + 1);
+        end
+        % The low-level read, which uses time-based reads
+        function A = read_lowlevel(this, fnum)
+            if fnum ~= this.last_frame_lowlevel + 1
+                this.sh.CurrentTime = (fnum - 1) / this.sh.FrameRate;
+            end
+            A = readFrame(this.sh);
+            this.last_frame_lowlevel = fnum;
         end
     end
     % Other functions
