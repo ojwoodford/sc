@@ -130,6 +130,7 @@ elseif is_cell_or_stream(I)
     if ischar(A)
         % Read in the image (or images for multi-frame files)
         if n == 1
+            cell_or_stream = false;
             I = imread_rgb_multi(A);
             if iscell(I)
                 n = numel(I);
