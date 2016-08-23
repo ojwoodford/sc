@@ -596,7 +596,7 @@ for a = 1:size(mask, 2)
     if ischar(mask{1,a})
         if numel(mask{1,a}) == 1
             % Generate colours from MATLAB colour strings
-            mask{1,a} = rem(floor((strfind('kbgcrmyw', mask{1,a}) - 1) * [0.25 0.5 1]), 2);
+            mask{1,a} = str2color(mask{1,a});
         else
             % Assume it's a colormap name
             mask{1,a} = sc(I, mask{1,a});
