@@ -139,6 +139,7 @@ classdef imstream < handle
         end
         % The low-level read, which uses time-based reads
         function A = read_lowlevel(this, fnum)
+            fnum = double(fnum);
             if fnum ~= this.last_frame_lowlevel + 1
                 this.sh.CurrentTime = (fnum - 1) / this.sh.FrameRate;
             end
