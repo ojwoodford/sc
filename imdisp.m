@@ -276,7 +276,7 @@ else
         state.I = I;
         state.is_cell_or_stream = cell_or_stream;
         % Set the callback for image navigation, and save the image data in the figure
-        set(hFig, 'KeyPressFcn', @keypress_callback, 'Interruptible', 'off', 'BusyAction', 'cancel', 'UserData', state);
+        set(hFig, 'KeyPressFcn', @keypress_callback, 'Interruptible', 'off', 'BusyAction', 'cancel', 'UserData', state, 'Name', 'Image index: 1.');
     end
     
     % Flip hIm so it matches the layout
@@ -300,7 +300,7 @@ ImSz = layout([2 1]) .* [x y] ./ (1 - 2 * gap([end 1]));
 figPosCur = get(hFig, 'Position');
 % Monitor sizes
 MonSz = get(0, 'MonitorPositions');
-if ~ishg2(hFig);
+if ~ishg2(hFig)
     % Correct the size
     MonSz(:,3:4) = MonSz(:,3:4) - MonSz(:,1:2) + 1;
 end
@@ -376,7 +376,7 @@ switch event_data.Character
         up = 0.1; % Forward a row
     case 'f'
         state = get(fig, 'UserData');
-        fprintf('Current index: %d\n', state.index); % Print out the index
+        fprintf('Image index: %d\n', state.index); % Print out the index
         return;
     case 'g'
         % Get the user to input a frame number
@@ -408,10 +408,10 @@ end
 index = state.index;
 % Get number of images
 n = prod(state.layout);
-% Generate 12 valid indices
+% Generate valid indices
 if abs(up) < 1
-    % Increment by row
-    index = index + state.layout(2) * (up * 10) - 1;
+    % Increment by row, or by 10 if only one image
+    index = index + state.layout(2) * (up * (10 ^ (2 - (prod(state.layout) > 1)))) - 1;
 else
     if state.layout(1) == 1
         % Increment by column
@@ -453,7 +453,7 @@ end
 drawnow;
 % Save the current index
 state.index = index(1);
-set(fig, 'UserData', state);
+set(fig, 'UserData', state, 'Name', sprintf('Image index: %d.', state.index));
 end
 
 %% Display the image
