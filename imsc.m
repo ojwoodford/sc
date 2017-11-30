@@ -41,8 +41,15 @@ end
 if ~isempty(clim)
     set(h, 'CDataMapping', 'scaled');
     ha = get(h, 'Parent');
+    try
+        colormap(ha, map);
+    catch
+        set(get(ha, 'Parent'), 'Colormap', map);
+    end
+    if clim(1) == clim(2)
+        clim(2) = clim(2) + 1;
+    end
     set(ha, 'CLim', clim);
-    set(get(ha, 'Parent'), 'Colormap', map);
 end
 % Don't display the handle if not requested
 if nargout < 1

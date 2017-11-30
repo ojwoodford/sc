@@ -197,11 +197,15 @@ if nargout == 0
     hIm = imdisp(I, 'Border', 0);
     % Set the colormap (if valid)
     if ~isempty(limits)
-        set(gcf, 'Colormap', map);
+        try
+            colormap(gca(), map);
+        catch
+            set(gcf(), 'Colormap', map);
+        end
         if limits(1) == limits(2)
             limits(2) = limits(2) + 1;
         end
-        set(gca, 'CLim', limits);
+        set(gca(), 'CLim', limits);
         set(hIm, 'CDataMapping', 'scaled');
     end
     % Don't print out the matrix if we've forgotten the ";"
