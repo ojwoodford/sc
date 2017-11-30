@@ -393,7 +393,9 @@ switch lower(cmap(1+reverseMap:end-grayMap))
         end
         cmap2 = cmap;
         cmap2(reverseMap+(1:5)) = [];
+        M = isnan(I);
         [I, limits] = real2rgb(I, cmap2, limits);
+        I(repmat(M, [1 1 3])) = 0;
         I = rescale(A + I, [0.2 1.8]);
 %% Gray_jet
     case 'gray_jet'
