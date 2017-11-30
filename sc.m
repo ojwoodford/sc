@@ -198,6 +198,9 @@ if nargout == 0
     % Set the colormap (if valid)
     if ~isempty(limits)
         set(gcf, 'Colormap', map);
+        if limits(1) == limits(2)
+            limits(2) = limits(2) + 1;
+        end
         set(gca, 'CLim', limits);
         set(hIm, 'CDataMapping', 'scaled');
     end
