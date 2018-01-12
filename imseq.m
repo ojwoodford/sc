@@ -6,16 +6,25 @@
 % of MATLAB's VideoReader class. However, the read method can only read an
 % image at a time.
 %
-% The format of the filename is assumed to contain an integer, and the
-% sequence is assumed to increment that integer by one for each consecutive
-% frame, e.g.:
-%    input.98.jpg, input.99.jpg, input.100.jpg, etc.
-%  The integer can also be zero padded, e.g.:
-%    0000.png, 0001.png, 0002.png, etc.
+% There are two ways of defining the files to be used:
+%  Wildcard - e.g. filename = 'images/*.jpg' will use all files fitting
+%             that pattern (as found by DIR), and sort them alphabetically.
+%             Note that this doesn't work for image sequences containing
+%             (for example) 1.jpg and 10.jpg, as such files will not be
+%             sorted numerically.
+%  Numbered - e.g. filename = 'images/im.1.jpg' will use all files fitting
+%             that numbered pattern, in numerical order, starting at the
+%             number given. The format of the filename is assumed to
+%             contain an integer, and the  sequence is assumed to increment
+%             that integer by one for each consecutive frame, e.g.:
+%                 input.98.jpg, input.99.jpg, input.100.jpg, etc.
+%             The integer can also be zero padded, e.g.:
+%                 0000.png, 0001.png, 0002.png, etc.
 %
 % IN:
 %    filename - string containing the full or partial path to the first
-%               frame in an image sequence.
+%               frame in an image sequence, or a filename pattern with
+%               wildcards.
 %
 % OUT:
 %    h - handle to the stream.
@@ -27,9 +36,7 @@
 classdef imseq < hgsetget
     properties (Hidden = true, GetAccess = private, SetAccess = private)
         % Internal properties
-        path;
-        format_string;
-        zero_index;
+        nameFunc;
     end
     properties (SetAccess = private)
         % Visible properties
@@ -57,39 +64,56 @@ classdef imseq < hgsetget
     methods
         % Contructor
         function this = imseq(sname)
-            this.Name = sname;
-            [fpath, fname, fext] = fileparts(which(sname));
-            if isempty(fname)
+            if any(sname == '*')
+                % Directory listing
                 [fpath, fname, fext] = fileparts(sname);
                 if isempty(fpath)
-                    fpath = cd;
+                    fpath = cd();
                 else
                     fpath = cd(cd(fpath));
                 end
-            end
-            % Find the last set of consecutive digits
-            [start, finish] = regexp(fname, '[0-9]+');
-            if isempty(start)
-                error('No image index found.');
-            end
-            start = start(end);
-            finish = finish(end);
-            this.format_string = sprintf('%s%%.%dd%s%s', fname(1:start-1), finish-start+1, fname(finish+1:end), fext);
-            this.path = [fpath filesep];
-            this.zero_index = str2double(fname(start:finish)) - 1;
-            this.FrameRate = 30;
-            % Compute sequence length
-            fnum = this.zero_index;
-            while 1
-                fnum = fnum + 1;
-                % Check we can open the file for reading
-                fh = fopen([this.path sprintf(this.format_string, fnum)], 'r');
-                if fh == -1
-                    break;
+                fpath = [fpath '/'];
+                list = dir([fpath fname fext]);
+                list = sort({list(:).name});
+                this.NumberOfFrames = numel(list);
+                this.nameFunc = @(n) [fpath list{n}];
+            else
+                % Format string
+                this.Name = sname;
+                [fpath, fname, fext] = fileparts(which(sname));
+                if isempty(fname)
+                    [fpath, fname, fext] = fileparts(sname);
+                    if isempty(fpath)
+                        fpath = cd();
+                    else
+                        fpath = cd(cd(fpath));
+                    end
                 end
-                fclose(fh);
+                % Find the last set of consecutive digits
+                [start, finish] = regexp(fname, '[0-9]+');
+                if isempty(start)
+                    error('No image index found.');
+                end
+                start = start(end);
+                finish = finish(end);
+                format_string = sprintf('%s/%s%%.%dd%s%s', fpath, fname(1:start-1), finish-start+1, fname(finish+1:end), fext);
+                zero_index = str2double(fname(start:finish)) - 1;
+                this.nameFunc = @(n) sprintf(format_string, n+zero_index);
+                % Compute sequence length
+                fnum = 0;
+                while 1
+                    fnum = fnum + 1;
+                    % Check we can open the file for reading
+                    fh = fopen(this.nameFunc(fnum), 'r');
+                    if fh == -1
+                        break;
+                    end
+                    fclose(fh);
+                end
+                this.NumberOfFrames = fnum - 1;
             end
-            this.NumberOfFrames = fnum - 1 - this.zero_index;
+            % Set frame rate and duration
+            this.FrameRate = 30;
             this.Duration = this.NumberOfFrames / this.FrameRate;
             % Compute frame info
             A = read(this, 1);
@@ -125,7 +149,7 @@ classdef imseq < hgsetget
             if fnum < 1 || fnum > this.NumberOfFrames
                 error('Frame %d is not in the range of allowed frames: [1 %d].', fnum, this.NumberOfFrames);
             end
-            [A, map] = imread([this.path sprintf(this.format_string, this.zero_index+fnum)]);
+            [A, map] = imread(this.nameFunc(fnum));
             if ~isempty(map)
                 A = reshape(map(uint32(A)+1,:), [size(A) size(map, 2)]); % Assume indexed from 0
             end
