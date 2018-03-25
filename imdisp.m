@@ -179,53 +179,56 @@ if n < 2
     set(hFig, 'Colormap', map);
 end
 
-% Display the image(s)
+% Handle the empty case
 if n == 0
     hIm = display_image([], gca, [0 1]);
     
     if nargout == 0
         clear hIm % Avoid printing this out
     end
-    return
+    return;
 elseif n == 1
+    layout = [1 1];
+else
+    % Compute a good layout
+    layout = choose_layout(n, y, x, layout, figSize);
+end
+num = prod(layout);
+
+% Display the image(s)
+resize = ~(strcmp(get(hFig, 'WindowStyle'), 'docked') || x == 0 || y == 0);
+if isequal(layout, [1 1])
     % IMSHOW mode
     % Display the single image
-    hAx = gca;
+    hAx = gca();
     if cell_or_stream
-        I = I{1};
+        A = I{1};
+    else
+        A = I;
     end
-    hIm = display_image(I, hAx, lims);
-    
-    if nargout == 0
-        clear hIm % Avoid printing this out
-    end
+    hIm = display_image(A, hAx, lims);
     
     % Only resize image if it is alone in the figure
     if numel(findobj(get(hFig, 'Children'), 'Type', 'axes')) > 1
-        return
+        resize = false;
+    else
+        % Could still be the first subplot - do another check
+        axesPos = get(hAx, 'Position');
+        newAxesPos = [gap(1) gap(end) 1-2*gap(1) 1-2*gap(end)];
+        if max(abs(axesPos - get(hFig, 'DefaultAxesPosition'))) < 1e-15
+            % Default position => not a subplot
+            % Fill the window
+            set(hAx, 'Units', 'normalized', 'Position', newAxesPos);
+            axesPos = newAxesPos;
+        end
+        if ~isequal(axesPos, newAxesPos)
+            % Figure not alone, so don't resize.
+            resize = false;
+        end
     end
-    % Could still be the first subplot - do another check
-    axesPos = get(hAx, 'Position');
-    newAxesPos = [gap(1) gap(end) 1-2*gap(1) 1-2*gap(end)];
-    if max(abs(axesPos - get(hFig, 'DefaultAxesPosition'))) < 1e-15
-        % Default position => not a subplot
-        % Fill the window
-        set(hAx, 'Units', 'normalized', 'Position', newAxesPos);
-        axesPos = newAxesPos;
-    end
-    if ~isequal(axesPos, newAxesPos)
-        % Figure not alone, so don't resize.
-        return
-    end
-    layout = [1 1];
 else
     % MONTAGE mode
-    % Compute a good layout
-    layout = choose_layout(n, y, x, layout, figSize);
-
     % Create a data structure to store the data in
-    num = prod(layout);
-    state.num = num * ceil(n / num);
     hIm = zeros(layout);
     hAx = zeros(layout);
     
@@ -240,7 +243,7 @@ else
     set(hFig, 'Colormap', map);
 
     % Set the first lot of images
-    index = mod(0:num-1, state.num) + 1;
+    index = mod(0:num-1, num * ceil(n / num)) + 1;
     hw = 1 ./ layout;
     gap = gap ./ layout;
     dims = hw - 2 * gap;
@@ -264,30 +267,33 @@ else
         end
     end
     
-    % Check if we need to be able to scroll through images
-    if n > num
-        % Intialize rest of data structure
-        state.hIm = hIm;
-        state.hAx = hAx;
-        state.index = 1;
-        state.layout = layout;
-        state.lims = lims;
-        state.n = n;
-        state.I = I;
-        state.is_cell_or_stream = cell_or_stream;
-        % Set the callback for image navigation, and save the image data in the figure
-        set(hFig, 'KeyPressFcn', @keypress_callback, 'Interruptible', 'off', 'BusyAction', 'cancel', 'UserData', state, 'Name', 'Image index: 1.');
-    end
-    
-    % Flip hIm so it matches the layout
-    hIm = hIm(end:-1:1,:);
-    
-    if nargout == 0
-        clear hIm % Avoid printing this out
-    end
 end
 
-if strcmp(get(hFig, 'WindowStyle'), 'docked') || x == 0 || y == 0
+    
+% Check if we need to be able to scroll through images
+if n > num
+    % Intialize rest of data structure
+    state.num = num * ceil(n / num);
+    state.hIm = hIm;
+    state.hAx = hAx;
+    state.index = 1;
+    state.layout = layout;
+    state.lims = lims;
+    state.n = n;
+    state.I = I;
+    state.is_cell_or_stream = cell_or_stream;
+    % Set the callback for image navigation, and save the image data in the figure
+    set(hFig, 'KeyPressFcn', @keypress_callback, 'Interruptible', 'off', 'BusyAction', 'cancel', 'UserData', state, 'Name', 'Image index: 1.');
+end
+
+if nargout == 0
+    clear hIm % Avoid printing this out
+else
+    % Flip hIm so it matches the layout
+    hIm = hIm(end:-1:1,:);
+end
+
+if ~resize
     % Figure is docked or image is empty, so can't resize
     return
 end
