@@ -96,7 +96,7 @@ classdef imseq < hgsetget
                 end
                 start = start(end);
                 finish = finish(end);
-                format_string = sprintf('%s/%s%%.%dd%s%s', fpath, fname(1:start-1), finish-start+1, fname(finish+1:end), fext);
+                format_string = sprintf('%s/%s%%.%dd%s%s', strrep(fpath, '\', '/'), fname(1:start-1), finish-start+1, fname(finish+1:end), fext);
                 zero_index = str2double(fname(start:finish)) - 1;
                 this.nameFunc = @(n) sprintf(format_string, n+zero_index);
                 % Compute sequence length
