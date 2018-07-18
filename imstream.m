@@ -66,6 +66,10 @@ classdef imstream < handle
         function delete(this)
             delete(this.sh);
         end
+        % Disp - pass on to the underlying stream
+        function disp(this, varargin)
+            disp(this.sh, varargin{:});
+        end
         % Pass on set and get requests to the underlying stream
         function varargout = get(this, varargin)
             [varargout{1:nargout}] = get(this.sh, varargin{:});
