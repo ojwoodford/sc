@@ -690,7 +690,7 @@ end
 %% Rescale RGB images to the correct limits
 function A = rescale_rgb(A, lims)
 if size(A, 3) == 3 && ~isequal(lims, default_limits(A))
-    A = rescale(A, lims);
+    A = max(min((A - lims(1)) ./ (lims(2) - lims(1)), 1), 0);
 end
 end
 
@@ -700,7 +700,7 @@ if size(A, 3) == 1
     lims = min_max(A);
 else
     lims = [0 1];
-    if ~isfloat(A)
+    if ~isfloat(A) && ~islogical(A)
         lims = lims * double(intmax(class(A)));
     end
 end
