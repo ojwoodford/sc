@@ -181,7 +181,7 @@ end
 
 % Handle the empty case
 if n == 0
-    hIm = display_image([], gca, [0 1]);
+    hIm = display_image([], gca(), [0 1]);
     
     if nargout == 0
         clear hIm % Avoid printing this out
@@ -690,7 +690,7 @@ end
 %% Rescale RGB images to the correct limits
 function A = rescale_rgb(A, lims)
 if size(A, 3) == 3 && ~isequal(lims, default_limits(A))
-    A = max(min((A - lims(1)) ./ (lims(2) - lims(1)), 1), 0);
+    A = max(min((double(A) - lims(1)) ./ (lims(2) - lims(1)), 1), 0);
 end
 end
 
