@@ -3,3 +3,4 @@
 *.asv
 *~
 *.mex*
+.DS_Store

@@ -45,16 +45,21 @@ classdef imstream < handle
     methods
         % Constructor
         function this = imstream(fname, varargin)
-            [fext, fext, fext] = fileparts(fname);
-            switch lower(fext(2:end))
-                case {'bmp', 'tif', 'tiff', 'jpeg', 'jpg', 'png', 'ppm', 'pgm', 'pbm', 'gif'}
-                    % Image sequence
-                    this.sh = imseq(fname);
-                case {'mpg', 'avi', 'mp4', 'm4v', 'mpeg', 'mxf', 'mj2', 'wmv', 'asf', 'asx', 'mov', 'ogg'}
-                    % Video file
-                    this.sh = VideoReader(fname);
-                otherwise
-                    error('File extension %s not recognised.', fext);
+            if iscell(fname)
+                % Assume this is a list of images
+                this.sh = imseq(fname);
+            else
+                [fext, fext, fext] = fileparts(fname);
+                switch lower(fext(2:end))
+                    case {'bmp', 'tif', 'tiff', 'jpeg', 'jpg', 'png', 'ppm', 'pgm', 'pbm', 'gif'}
+                        % Image sequence
+                        this.sh = imseq(fname);
+                    case {'mpg', 'avi', 'mp4', 'm4v', 'mpeg', 'mxf', 'mj2', 'wmv', 'asf', 'asx', 'mov', 'ogg'}
+                        % Video file
+                        this.sh = VideoReader(fname);
+                    otherwise
+                        error('File extension %s not recognised.', fext);
+                end
             end
             % Create the buffered stream
             this.buffer = cache(@(n) read_lowlevel(this, n), varargin{:});

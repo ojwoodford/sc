@@ -64,7 +64,11 @@ classdef imseq < hgsetget
     methods
         % Contructor
         function this = imseq(sname)
-            if any(sname == '*')
+            if iscell(sname)
+                this.NumberOfFrames = numel(sname);
+                fpath = [cd() '/'];
+                this.nameFunc = @(n) [fpath sname{n}];
+            elseif any(sname == '*')
                 % Directory listing
                 [fpath, fname, fext] = fileparts(sname);
                 if isempty(fpath)
