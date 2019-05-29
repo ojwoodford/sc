@@ -75,7 +75,7 @@
 %
 %   See also IMAGE, IMAGESC, IMSHOW, MONTAGE.
 
-% Copyright: Oliver Woodford 2010-2014
+% Copyright: Oliver Woodford 2010-2019
 
 function hIm = imdisp(I, varargin)
 % Parse inputs
@@ -83,7 +83,7 @@ function hIm = imdisp(I, varargin)
 
 if nargin == 0 || (iscell(I) && isempty(I))
     % Read in all the images in the directory
-    I = get_im_names();
+    I = dirim();
     if isempty(I)
         % No images found
         if nargout > 0
@@ -576,22 +576,6 @@ else
             A = imread_rgb_(name);
     end
 end
-end
-
-%% Get the names of all images in a directory
-function L = get_im_names()
-D = dir;
-n = 0;
-L = cell(size(D));
-% Go through the directory list
-for a = 1:numel(D)
-    % Check if file is a supported image type
-    if numel(D(a).name) > 4 && ~D(a).isdir && (any(strcmpi(D(a).name(end-3:end), {'.png', '.tif', '.jpg', '.bmp', '.ppm', '.pgm', '.pbm', '.gif', '.ras'})) || any(strcmpi(D(a).name(end-4:end), {'.tiff', '.jpeg'})))
-        n = n + 1;
-        L{n} = D(a).name;
-    end
-end
-L = L(1:n);
 end
 
 %% Parse inputs
