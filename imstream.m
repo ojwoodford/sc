@@ -88,21 +88,21 @@ classdef imstream < handle
             this.curr_frame = frame;
         end
         % Forward calls like imstream(a) to read
-        function A = subsref(this, frame)
+        function varargout = subsref(this, frame)
             switch frame(1).type
                 case {'()', '{}'}
                     if numel(frame(1).subs) ~= 1
                         error('Only one dimensional indexing supported');
                     end
-                    A = read(this, frame(1).subs{1});
+                    [varargout{1:nargout}] = read(this, frame(1).subs{1});
                 case '.'
                     if any(strcmp(frame(1).subs, methods(this)))
                         % Forward these references to the relevant method
-                        A = builtin('subsref', this, frame);
+                        [varargout{1:nargout}] = builtin('subsref', this, frame);
                     elseif any(strcmp(frame(1).subs, methods(this.sh))) || any(strcmp(frame(1).subs, properties(this.sh)))
                         % Forward these references to the video/image
                         % sequence class
-                        A = builtin('subsref', this.sh, frame);
+                        [varargout{1:nargout}] = builtin('subsref', this.sh, frame);
                     else
                         error('%s is not a public property or method of the imstream or %s classes.', frame(1).subs, class(this.sh));
                     end
