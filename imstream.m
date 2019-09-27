@@ -37,6 +37,7 @@
 classdef imstream < handle
     properties (Hidden = true, SetAccess = private)
         sh; % Stream handle
+        number_of_frames;
         curr_frame;
         last_frame_lowlevel;
         buffer; % Image cache stuff
@@ -49,14 +50,16 @@ classdef imstream < handle
                 % Assume this is a list of images
                 this.sh = imseq(fname);
             else
-                [fext, fext, fext] = fileparts(fname);
+                [~, ~, fext] = fileparts(fname);
                 switch lower(fext(2:end))
                     case {'bmp', 'tif', 'tiff', 'jpeg', 'jpg', 'png', 'ppm', 'pgm', 'pbm', 'gif'}
                         % Image sequence
                         this.sh = imseq(fname);
+                        this.number_of_frames = this.sh.NumberOfFrames;
                     case {'mpg', 'avi', 'mp4', 'm4v', 'mpeg', 'mxf', 'mj2', 'wmv', 'asf', 'asx', 'mov', 'ogg'}
                         % Video file
                         this.sh = VideoReader(fname);
+                        this.number_of_frames = round(this.sh.Duration * this.sh.FrameRate);
                     otherwise
                         error('File extension %s not recognised.', fext);
                 end
@@ -110,7 +113,7 @@ classdef imstream < handle
         end
         % Get the number of frames
         function n = num_frames(this)
-            n = round(get(this.sh, 'Duration') * get(this.sh, 'FrameRate'));
+            n = this.number_of_frames;
         end
         function n = numel(this, varargin)
             if nargin > 1
