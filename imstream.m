@@ -49,6 +49,7 @@ classdef imstream < handle
             if iscell(fname)
                 % Assume this is a list of images
                 this.sh = imseq(fname);
+                this.number_of_frames = this.sh.NumberOfFrames;
             else
                 [~, ~, fext] = fileparts(fname);
                 switch lower(fext(2:end))
@@ -121,6 +122,13 @@ classdef imstream < handle
             else
                 n = num_frames(this);
             end
+        end
+        function sz = size(this, dim)
+            sz = [num_frames(this) 1];
+            if nargin < 2
+                return;
+            end
+            sz = sz(min(dim, end));
         end
         % Support the videoReader (from VideoIO toolbox) interface for backwards compatibility
         function b = next(this)
