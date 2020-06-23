@@ -435,6 +435,9 @@ switch lower(cmap(1+reverseMap:end-grayMap))
         end
         % Calculate top 3 principle components
         I = calc_prin_comps(I, 3);
+        if c < 3
+            I(:,3) = 0;
+        end
         % Normalize each channel independently
         if isBsx
             I = bsxfun(@minus, I, min(I, [], 1));
@@ -716,6 +719,8 @@ c = size(I, 3);
 I = reshape(I, [], c);
 if nargin < 2
     numComps = c;
+else
+    numComps = min(c, numComps);
 end
 % Do SVD
 [I, S] = svd(I, 0);
